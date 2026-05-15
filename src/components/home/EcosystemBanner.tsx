@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Waves } from 'lucide-react';
 
 const FEATURES = [
-  { emoji: '⚡', label: 'Zero Gas Fees',      desc: 'Base Smart Wallet covers gas costs'         },
+  { emoji: '⚡', label: 'Ultra-Low Gas Fees',  desc: 'Near-zero transaction costs on Base L2'     },
   { emoji: '🔵', label: 'Coinbase Backed',    desc: 'Built and incubated by Coinbase'             },
   { emoji: '🔗', label: 'EVM Compatible',     desc: 'Full Ethereum tooling compatibility'          },
   { emoji: '💧', label: 'Deep Liquidity',     desc: '$5B+ TVL and growing daily'                  },

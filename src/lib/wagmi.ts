@@ -2,18 +2,17 @@ import { http, createConfig } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { coinbaseWallet, injected, walletConnect } from 'wagmi/connectors';
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? 'base-wave-demo';
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '';
 
 export const config = createConfig({
   chains: [base, baseSepolia],
   connectors: [
+    injected({ target: 'metaMask' }),
     coinbaseWallet({
       appName: 'Base Wave',
-      appLogoUrl: 'https://base-wave.xyz/logo.png',
-      preference: 'smartWalletOnly',
+      preference: 'all',
     }),
-    injected({ target: 'metaMask' }),
-    walletConnect({ projectId }),
+    ...(projectId ? [walletConnect({ projectId })] : []),
   ],
   transports: {
     [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL ?? 'https://mainnet.base.org'),

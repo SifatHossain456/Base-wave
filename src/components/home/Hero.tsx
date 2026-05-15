@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, TrendingUp, TrendingDown, Zap, Shield, Globe } from 'lucide-react';
+import { ArrowRight, TrendingUp, TrendingDown, Zap, Code2, Globe } from 'lucide-react';
 import { useAssetPrices } from '@/hooks/useAssetPrices';
 
 function ParticleCanvas() {
@@ -158,9 +158,9 @@ function LivePriceTicker() {
 }
 
 const badges = [
-  { icon: Zap,    label: 'Sub-Second TXs',  color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { icon: Shield, label: 'Audited & Secure', color: 'text-green-400',  bg: 'bg-green-400/10'  },
-  { icon: Globe,  label: 'Base Mainnet',     color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
+  { icon: Zap,   label: '~2s Block Time', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+  { icon: Code2, label: 'Open Source',    color: 'text-green-400',  bg: 'bg-green-400/10'  },
+  { icon: Globe, label: 'Base Mainnet',   color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
 ];
 
 export function Hero() {

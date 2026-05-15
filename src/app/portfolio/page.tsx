@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
+import { formatUnits } from 'viem';
 import { BarChart3, TrendingUp, Wallet, ExternalLink, Copy, ArrowRight, Waves } from 'lucide-react';
 import { shortenAddress } from '@/lib/utils';
 import { useAssetPrices } from '@/hooks/useAssetPrices';
@@ -15,32 +16,6 @@ const BASE_TOKENS = [
   { symbol: 'AERO',  name: 'Aerodrome',     color: '#0052FF', coingeckoId: 'aerodrome-finance' },
 ];
 
-const DEFI_POSITIONS = [
-  {
-    protocol: 'Aerodrome',
-    type: 'LP Position',
-    pair: 'ETH / USDC',
-    apy: '24.5%',
-    color: '#0052FF',
-    emoji: '✈️',
-  },
-  {
-    protocol: 'Moonwell',
-    type: 'Lending',
-    pair: 'USDC Supply',
-    apy: '8.2%',
-    color: '#9333EA',
-    emoji: '🌙',
-  },
-  {
-    protocol: 'Aave V3',
-    type: 'Borrowing',
-    pair: 'ETH Collateral',
-    apy: '3.1%',
-    color: '#B6509E',
-    emoji: '👻',
-  },
-];
 
 function NotConnected() {
   return (
@@ -77,7 +52,7 @@ export default function PortfolioPage() {
   if (!isConnected || !address) return <NotConnected />;
 
   const ethPrice = prices.find((p) => p.symbol === 'ETH')?.price ?? 0;
-  const ethBalance = balance ? parseFloat(balance.formatted) : 0;
+  const ethBalance = balance ? parseFloat(formatUnits(balance.value, balance.decimals)) : 0;
   const ethUsdValue = ethBalance * ethPrice;
 
   const copyAddr = () => {
@@ -208,7 +183,7 @@ export default function PortfolioPage() {
           })}
         </div>
 
-        {/* DeFi Positions */}
+        {/* DeFi Positions — Coming Soon */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -218,40 +193,22 @@ export default function PortfolioPage() {
           <div className="flex items-center gap-2 mb-5">
             <Waves className="w-5 h-5 text-blue-400" />
             <h2 className="font-bold text-lg">DeFi Positions</h2>
-            <span className="ml-auto text-xs text-gray-500">Sample positions — connect to see yours</span>
           </div>
-          <div className="space-y-3">
-            {DEFI_POSITIONS.map((pos, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + i * 0.08 }}
-                className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl hover:bg-white/8 transition-colors"
-              >
-                <div
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
-                  style={{ background: `${pos.color}20` }}
-                >
-                  {pos.emoji}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">{pos.protocol}</p>
-                  <p className="text-xs text-gray-500">{pos.type} · {pos.pair}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-green-400">{pos.apy} APY</p>
-                  <p className="text-xs text-gray-500">Active</p>
-                </div>
-              </motion.div>
-            ))}
+          <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+            <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-2xl mb-2">
+              🌊
+            </div>
+            <p className="font-semibold text-gray-300">DeFi position tracking coming soon</p>
+            <p className="text-sm text-gray-500 max-w-xs">
+              Automatic detection of your Aerodrome, Moonwell, Aave and other Base protocol positions.
+            </p>
+            <Link
+              href="/protocols"
+              className="mt-2 text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+            >
+              Explore yield opportunities →
+            </Link>
           </div>
-          <Link
-            href="/protocols"
-            className="block text-center mt-5 text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors"
-          >
-            Explore more yield opportunities →
-          </Link>
         </motion.div>
 
         {/* Basescan link */}
