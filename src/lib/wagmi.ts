@@ -6,6 +6,7 @@ const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '';
 
 export const config = createConfig({
   chains: [base, baseSepolia],
+  multiInjectedProviderDiscovery: false,
   connectors: [
     metaMask({
       dappMetadata: { name: 'Base Wave', url: 'https://arc-nova.vercel.app' },

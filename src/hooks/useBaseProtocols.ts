@@ -84,7 +84,7 @@ const PROTOCOLS: Omit<Protocol, 'tvl' | 'change1d' | 'loading'>[] = [
     slug: 'balancer-v2',
     category: 'DEX',
     emoji: '⚖️',
-    color: '#1E1E1E',
+    color: '#8247E5',
     url: 'https://app.balancer.fi',
     description: 'Flexible AMM with weighted pools, stable pools, and boosted pools on Base.',
   },
