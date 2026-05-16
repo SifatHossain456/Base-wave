@@ -91,11 +91,26 @@ function WalletDropdown({ address, onDisconnect }: { address: string; onDisconne
 
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const { connect, connectors, isPending } = useConnect();
+  const [mmDetected, setMmDetected] = useState<boolean | null>(null);
 
-  // EIP-6963 auto-detects MetaMask only if it's actually installed.
-  // Coinbase Wallet comes from our configured connector (works without extension).
-  const metaMaskConnector = connectors.find((c) => c.name === 'MetaMask');
-  const coinbaseConnector = connectors.find((c) => c.name === 'Coinbase Wallet');
+  useEffect(() => {
+    // Give browser a tick to let extensions inject into window
+    const timer = setTimeout(() => {
+      const eth = (window as unknown as { ethereum?: { isMetaMask?: boolean; providers?: Array<{ isMetaMask?: boolean }> } }).ethereum;
+      setMmDetected(
+        !!(eth?.isMetaMask || eth?.providers?.some((p) => p.isMetaMask))
+      );
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // metaMask() connector is always present (configured), Coinbase too
+  const metaMaskConnector = connectors.find(
+    (c) => c.name === 'MetaMask' || c.id === 'metaMask' || c.id === 'io.metamask'
+  );
+  const coinbaseConnector = connectors.find(
+    (c) => c.name === 'Coinbase Wallet' || c.id === 'coinbaseWalletSDK'
+  );
 
   const handleConnect = (connector: (typeof connectors)[0]) => {
     connect(
@@ -103,33 +118,20 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
       {
         onSuccess: () => { toast.success('Wallet connected!'); onClose(); },
         onError: (err) => {
-          if (err.message?.includes('rejected') || err.message?.includes('denied') || err.message?.includes('cancel')) {
-            toast.error('Connection rejected');
+          const msg = err.message ?? '';
+          if (msg.includes('rejected') || msg.includes('denied') || msg.includes('cancel')) {
+            toast.error('Rejected — please approve in your wallet');
+          } else if (msg.includes('Connector not found') || msg.includes('not found')) {
+            toast.error('Wallet not found — make sure it is unlocked');
           } else {
-            toast.error('Connection failed. Try again.');
+            toast.error('Could not connect. Check your wallet and try again.');
           }
         },
       }
     );
   };
 
-  const WalletRow = ({ connector, meta }: { connector: (typeof connectors)[0]; meta: { icon: string; description: string } }) => (
-    <button
-      onClick={() => handleConnect(connector)}
-      disabled={isPending}
-      className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
-    >
-      <span className="text-2xl">{meta.icon}</span>
-      <div className="text-left flex-1">
-        <p className="font-semibold text-sm">{connector.name}</p>
-        <p className="text-xs text-gray-400">{meta.description}</p>
-      </div>
-      {isPending
-        ? <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin ml-auto" />
-        : <ChevronDown className="w-4 h-4 ml-auto -rotate-90 text-gray-500 group-hover:text-blue-400 transition-colors" />
-      }
-    </button>
-  );
+  const isNotInstalled = mmDetected === false;
 
   return (
     <motion.div
@@ -156,13 +158,8 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-3">
-          {/* MetaMask — shown via EIP-6963 if installed, else install link */}
-          {metaMaskConnector ? (
-            <WalletRow
-              connector={metaMaskConnector}
-              meta={CONNECTOR_META['MetaMask']}
-            />
-          ) : (
+          {/* MetaMask */}
+          {isNotInstalled ? (
             <a
               href="https://metamask.io/download"
               target="_blank"
@@ -176,14 +173,41 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
               </div>
               <ExternalLink className="w-4 h-4 ml-auto text-orange-400 group-hover:text-orange-300 transition-colors" />
             </a>
-          )}
+          ) : metaMaskConnector ? (
+            <button
+              onClick={() => handleConnect(metaMaskConnector)}
+              disabled={isPending || mmDetected === null}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-2xl">🦊</span>
+              <div className="text-left flex-1">
+                <p className="font-semibold text-sm">MetaMask</p>
+                <p className="text-xs text-gray-400">Browser extension wallet</p>
+              </div>
+              {isPending
+                ? <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin ml-auto" />
+                : <ChevronDown className="w-4 h-4 ml-auto -rotate-90 text-gray-500 group-hover:text-blue-400 transition-colors" />
+              }
+            </button>
+          ) : null}
 
-          {/* Coinbase Wallet — configured connector, works without extension */}
+          {/* Coinbase Wallet */}
           {coinbaseConnector && (
-            <WalletRow
-              connector={coinbaseConnector}
-              meta={CONNECTOR_META['Coinbase Wallet']}
-            />
+            <button
+              onClick={() => handleConnect(coinbaseConnector)}
+              disabled={isPending}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-2xl">🔵</span>
+              <div className="text-left flex-1">
+                <p className="font-semibold text-sm">Coinbase Wallet</p>
+                <p className="text-xs text-gray-400">Gasless & instant — powered by Coinbase</p>
+              </div>
+              {isPending
+                ? <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin ml-auto" />
+                : <ChevronDown className="w-4 h-4 ml-auto -rotate-90 text-gray-500 group-hover:text-blue-400 transition-colors" />
+              }
+            </button>
           )}
         </div>
 

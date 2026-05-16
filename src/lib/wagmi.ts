@@ -1,13 +1,15 @@
 import { http, createConfig } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { coinbaseWallet, walletConnect } from 'wagmi/connectors';
+import { metaMask, coinbaseWallet, walletConnect } from 'wagmi/connectors';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '';
 
 export const config = createConfig({
   chains: [base, baseSepolia],
-  multiInjectedProviderDiscovery: true, // EIP-6963: auto-detects MetaMask, Rabby, etc.
   connectors: [
+    metaMask({
+      dappMetadata: { name: 'Base Wave', url: 'https://arc-nova.vercel.app' },
+    }),
     coinbaseWallet({
       appName: 'Base Wave',
       preference: 'all',
