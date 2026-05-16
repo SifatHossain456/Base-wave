@@ -229,25 +229,30 @@ export function Navbar() {
       <motion.nav
         className={cn(
           'fixed top-0 left-0 right-0 z-30 transition-all duration-300',
-          scrolled ? 'glass shadow-2xl' : 'bg-transparent'
+          scrolled
+            ? 'border-b shadow-lg'
+            : 'bg-transparent border-transparent'
         )}
+        style={scrolled ? {
+          background: 'rgba(8, 9, 26, 0.88)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderColor: 'rgba(255,255,255,0.06)',
+        } : {}}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
         <WrongChainBanner />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="relative w-8 h-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-400 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Waves className="w-4 h-4 text-white" />
-                </div>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                <Waves className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="font-bold text-lg">
-                <span className="text-gradient-blue">Base</span>
-                <span className="text-white"> Wave</span>
+              <span className="font-bold text-[15px] tracking-tight">
+                <span className="text-white">Base</span>
+                <span className="text-blue-400"> Wave</span>
               </span>
             </Link>
 
@@ -279,9 +284,9 @@ export function Navbar() {
               ) : (
                 <button
                   onClick={() => setConnectOpen(true)}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity glow-blue"
+                  className="btn-primary text-sm"
                 >
-                  <Wallet className="w-4 h-4" />
+                  <Wallet className="w-3.5 h-3.5" />
                   Connect Wallet
                 </button>
               )}

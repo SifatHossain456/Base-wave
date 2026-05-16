@@ -18,62 +18,65 @@ export function TopProtocols() {
   const top6 = protocols.slice(0, 6);
 
   return (
-    <section className="py-20 px-4 relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/8 to-transparent pointer-events-none" />
-
+    <section className="py-20 px-4">
       <div className="max-w-7xl mx-auto">
+
+        {/* Section header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
           className="flex items-end justify-between mb-10"
         >
           <div>
-            <div className="inline-flex items-center gap-2 glass rounded-full px-3 py-1.5 mb-4 text-xs">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              <span className="text-gray-300">Live TVL from DefiLlama</span>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <span className="text-xs font-medium text-[var(--text-muted)] tracking-wide uppercase">Live TVL from DefiLlama</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-              Top <span className="text-gradient-blue">Base Protocols</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1.5">
+              Top Base Protocols
             </h2>
-            <p className="text-gray-400">The biggest DeFi protocols running on Base mainnet</p>
+            <p className="text-sm text-[var(--text-secondary)]">
+              The leading DeFi protocols running on Base mainnet
+            </p>
           </div>
           <Link
             href="/protocols"
-            className="hidden sm:flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
           >
-            View all <ArrowRight className="w-4 h-4" />
+            View all <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Protocol grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {top6.map((protocol, i) => (
             <motion.div
               key={protocol.slug}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              whileHover={{ y: -4 }}
-              className="wave-card glass-hover rounded-3xl p-6 group cursor-pointer"
+              transition={{ delay: i * 0.07, duration: 0.45 }}
+              className="card card-hover rounded-2xl p-5 group"
             >
-              {/* Top color bar already provided by wave-card::before via color */}
-              <div className="flex items-start justify-between mb-5">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
                     style={{
-                      background: `${protocol.color}20`,
-                      border: `1px solid ${protocol.color}30`,
+                      background: `${protocol.color}15`,
+                      border: `1px solid ${protocol.color}25`,
                     }}
                   >
                     {protocol.emoji}
                   </div>
                   <div>
-                    <p className="font-bold text-base">{protocol.name}</p>
+                    <p className="font-semibold text-sm text-white">{protocol.name}</p>
                     <span
-                      className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: `${protocol.color}20`, color: protocol.color }}
+                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: `${protocol.color}12`, color: protocol.color }}
                     >
                       {protocol.category}
                     </span>
@@ -84,29 +87,31 @@ export function TopProtocols() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="p-2 rounded-xl hover:bg-white/5 transition-colors text-gray-500 hover:text-white opacity-0 group-hover:opacity-100"
+                  className="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-[var(--text-muted)] hover:text-white opacity-0 group-hover:opacity-100"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
 
-              <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-2">
+              {/* Description */}
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-4 line-clamp-2">
                 {protocol.description}
               </p>
 
-              <div className="flex items-end justify-between">
+              {/* Stats */}
+              <div className="flex items-end justify-between pt-3 border-t border-white/5">
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Base TVL</p>
+                  <p className="text-xs text-[var(--text-muted)] mb-1">Base TVL</p>
                   {protocol.loading ? (
-                    <div className="h-7 w-24 bg-white/10 rounded animate-pulse" />
+                    <div className="h-6 w-20 bg-white/8 rounded-lg animate-pulse" />
                   ) : (
-                    <p className="text-2xl font-black" style={{ color: protocol.color }}>
+                    <p className="text-lg font-bold" style={{ color: protocol.color }}>
                       {formatTVL(protocol.tvl)}
                     </p>
                   )}
                 </div>
                 {!protocol.loading && protocol.change1d !== null && (
-                  <div className={`flex items-center gap-1 text-xs font-semibold ${protocol.change1d >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className={`flex items-center gap-1 text-xs font-medium ${protocol.change1d >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {protocol.change1d >= 0
                       ? <TrendingUp className="w-3.5 h-3.5" />
                       : <TrendingDown className="w-3.5 h-3.5" />
@@ -119,11 +124,9 @@ export function TopProtocols() {
           ))}
         </div>
 
-        <div className="flex justify-center mt-8 sm:hidden">
-          <Link
-            href="/protocols"
-            className="flex items-center gap-2 glass px-6 py-3 rounded-2xl text-sm font-semibold hover:border-blue-500/40 transition-all"
-          >
+        {/* Mobile view all */}
+        <div className="flex justify-center mt-6 sm:hidden">
+          <Link href="/protocols" className="btn-secondary text-sm">
             View all protocols <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
