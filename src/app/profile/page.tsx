@@ -2,23 +2,43 @@
 
 import { motion } from 'framer-motion';
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
-import { User, Waves, TrendingUp, ExternalLink, Copy, ArrowRight } from 'lucide-react';
+import { User, Waves, TrendingUp, ExternalLink, Copy, ArrowRight, DollarSign, Activity, Zap, Fuel } from 'lucide-react';
 import { shortenAddress } from '@/lib/utils';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-
-const STATS = [
-  { label: 'Base Network',  value: '#1 L2',    color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
-  { label: 'Chain TVL',     value: '$5B+',      color: 'text-green-400',  bg: 'bg-green-400/10'  },
-  { label: 'Daily TXNs',    value: '9M+',       color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  { label: 'Block Time',    value: '2s',         color: 'text-purple-400', bg: 'bg-purple-400/10' },
-];
+import { useBaseTVL } from '@/hooks/useBaseProtocols';
+import { useChainStats } from '@/hooks/useChainStats';
 
 const QUICK_LINKS = [
   { label: 'Browse Protocols', href: '/protocols', desc: 'Explore top DeFi protocols',     color: '#0052FF' },
   { label: 'View Portfolio',   href: '/portfolio', desc: 'Track your Base assets',         color: '#9333EA' },
   { label: 'Explore NFTs',     href: '/nfts',      desc: 'Top Base NFT collections',       color: '#EC4899' },
 ];
+
+function LiveStatCard({
+  label, value, icon: Icon, color, bg, loading,
+}: {
+  label: string;
+  value: string | null;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="glass rounded-2xl p-5 text-center">
+      <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+        <Icon className={`w-5 h-5 ${color}`} />
+      </div>
+      {loading ? (
+        <div className="h-7 w-20 bg-white/10 rounded-lg animate-pulse mx-auto mb-1" />
+      ) : (
+        <p className={`text-2xl font-black ${color} mb-1`}>{value ?? '—'}</p>
+      )}
+      <p className="text-xs text-gray-500">{label}</p>
+    </div>
+  );
+}
 
 function NotConnected() {
   return (
@@ -50,6 +70,8 @@ export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({ address, chainId: 8453 });
   const { disconnect } = useDisconnect();
+  const { tvl, change, loading: tvlLoading } = useBaseTVL();
+  const { transactionsToday, avgBlockTimeSec, gasPriceGwei, loading: statsLoading } = useChainStats();
 
   if (!isConnected || !address) return <NotConnected />;
 
@@ -58,10 +80,16 @@ export default function ProfilePage() {
     toast.success('Address copied!');
   };
 
+  const tvlStr = tvlLoading ? null : tvl ? `$${(tvl / 1e9).toFixed(2)}B` : null;
+  const txnsStr = statsLoading ? null : transactionsToday !== null
+    ? transactionsToday.toLocaleString()
+    : null;
+  const blockStr = statsLoading ? null : avgBlockTimeSec !== null ? `${avgBlockTimeSec}s` : null;
+  const gasStr = statsLoading ? null : gasPriceGwei !== null ? `${gasPriceGwei.toFixed(3)} Gwei` : null;
+
   return (
     <div className="min-h-screen pt-24 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-black mb-1">
             My <span className="text-gradient-blue">Profile</span>
@@ -71,9 +99,7 @@ export default function ProfilePage() {
 
         {/* Wallet card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="wave-card rounded-3xl p-7 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-6"
         >
           <div className="relative">
@@ -82,7 +108,6 @@ export default function ProfilePage() {
             </div>
             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-[#030B1A]" />
           </div>
-
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-black">Wave Rider</h2>
@@ -108,8 +133,12 @@ export default function ProfilePage() {
             <p className="text-sm text-blue-400 mt-2 font-semibold">
               {balance ? `${parseFloat(balance.formatted).toFixed(4)} ETH` : '—'} on Base
             </p>
+            {change !== null && (
+              <p className={`text-xs mt-0.5 ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                Base TVL {change >= 0 ? '+' : ''}{change.toFixed(2)}% today
+              </p>
+            )}
           </div>
-
           <button
             onClick={() => disconnect()}
             className="text-xs text-gray-500 hover:text-red-400 transition-colors self-start sm:self-center"
@@ -118,27 +147,32 @@ export default function ProfilePage() {
           </button>
         </motion.div>
 
-        {/* Network stats */}
+        {/* Live network stats */}
+        <motion.p
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}
+          className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+          Live Base Mainnet Stats
+        </motion.p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {STATS.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.07 }}
-              className="glass rounded-2xl p-5 text-center"
-            >
-              <p className={`text-2xl font-black ${s.color} mb-1`}>{s.value}</p>
-              <p className="text-xs text-gray-500">{s.label}</p>
-            </motion.div>
-          ))}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <LiveStatCard label="Ecosystem TVL" value={tvlStr} icon={DollarSign} color="text-green-400" bg="bg-green-400/10" loading={tvlLoading} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}>
+            <LiveStatCard label="Txns Today" value={txnsStr} icon={Activity} color="text-blue-400" bg="bg-blue-400/10" loading={statsLoading} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <LiveStatCard label="Avg Block Time" value={blockStr} icon={Zap} color="text-yellow-400" bg="bg-yellow-400/10" loading={statsLoading} />
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.31 }}>
+            <LiveStatCard label="Gas Price" value={gasStr} icon={Fuel} color="text-purple-400" bg="bg-purple-400/10" loading={statsLoading} />
+          </motion.div>
         </div>
 
         {/* Quick links */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
           className="glass rounded-3xl p-6 mb-6"
         >
           <div className="flex items-center gap-2 mb-5">
@@ -170,9 +204,7 @@ export default function ProfilePage() {
 
         {/* Basescan link */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
           className="glass rounded-2xl p-4 border border-blue-500/20 flex items-center gap-3"
         >
           <div className="w-9 h-9 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">

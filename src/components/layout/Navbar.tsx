@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi';
-import { Menu, X, Waves, BarChart3, User, Layers, ChevronDown, Wallet, LogOut, Copy, ExternalLink, AlertCircle, Image } from 'lucide-react';
+import { useAccount, useConnect, useDisconnect, useBalance, useChainId, useSwitchChain } from 'wagmi';
+import { base } from 'wagmi/chains';
+import { Menu, X, Waves, BarChart3, User, Layers, ChevronDown, Wallet, LogOut, Copy, ExternalLink, AlertCircle, Image, TriangleAlert } from 'lucide-react';
 import { cn, shortenAddress } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -172,6 +173,43 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function WrongChainBanner() {
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain, isPending } = useSwitchChain();
+
+  if (!isConnected || chainId === base.id) return null;
+
+  const chainName =
+    chainId === 1 ? 'Ethereum Mainnet'
+    : chainId === 137 ? 'Polygon'
+    : chainId === 56 ? 'BNB Chain'
+    : chainId === 10 ? 'Optimism'
+    : chainId === 42161 ? 'Arbitrum'
+    : `Chain ${chainId}`;
+
+  return (
+    <div className="bg-orange-600/95 backdrop-blur-sm border-b border-orange-500/40 px-4 py-2">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-white">
+          <TriangleAlert className="w-4 h-4 flex-shrink-0" />
+          <span>
+            Connected to <strong>{chainName}</strong>. Base Wave runs on{' '}
+            <strong>Base Mainnet</strong>.
+          </span>
+        </div>
+        <button
+          onClick={() => switchChain({ chainId: base.id })}
+          disabled={isPending}
+          className="flex-shrink-0 bg-white text-orange-600 text-xs font-bold px-4 py-1.5 rounded-xl hover:bg-orange-50 transition-colors disabled:opacity-60"
+        >
+          {isPending ? 'Switching…' : 'Switch to Base'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -197,6 +235,7 @@ export function Navbar() {
         animate={{ y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
+        <WrongChainBanner />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2 group">
