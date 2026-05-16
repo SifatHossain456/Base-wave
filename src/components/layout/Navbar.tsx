@@ -91,8 +91,21 @@ function WalletDropdown({ address, onDisconnect }: { address: string; onDisconne
 
 const ALLOWED_WALLETS = ['MetaMask', 'Coinbase Wallet'];
 
+const INSTALL_LINKS: Record<string, string> = {
+  'MetaMask': 'https://metamask.io/download',
+};
+
 function ConnectModal({ onClose }: { onClose: () => void }) {
-  const { connect, connectors, isPending, error } = useConnect();
+  const { connect, connectors, isPending } = useConnect();
+  const [mmInstalled, setMmInstalled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Detect MetaMask after mount (window is available)
+    const isInstalled =
+      typeof window !== 'undefined' &&
+      !!(window as { ethereum?: { isMetaMask?: boolean } }).ethereum?.isMetaMask;
+    setMmInstalled(isInstalled);
+  }, []);
 
   const seen = new Set<string>();
   const filteredConnectors = connectors.filter((c) => {
@@ -108,9 +121,13 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
       {
         onSuccess: () => { toast.success('Wallet connected!'); onClose(); },
         onError: (err) => {
-          if (err.message?.includes('not installed') || err.message?.includes('not found')) {
-            toast.error(`${connector.name} not installed`);
-          } else if (err.message?.includes('rejected') || err.message?.includes('denied')) {
+          if (
+            err.message?.includes('not installed') ||
+            err.message?.includes('not found') ||
+            err.message?.includes('Provider not found')
+          ) {
+            toast.error(`${connector.name} is not installed`);
+          } else if (err.message?.includes('rejected') || err.message?.includes('denied') || err.message?.includes('cancel')) {
             toast.error('Connection rejected');
           } else {
             toast.error('Connection failed');
@@ -147,11 +164,34 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
         <div className="space-y-3">
           {filteredConnectors.map((connector) => {
             const meta = CONNECTOR_META[connector.name] ?? { icon: '👛', description: connector.name };
+            const installUrl = INSTALL_LINKS[connector.name];
+            // MetaMask: show install link until we know it's installed
+            const notInstalled = connector.name === 'MetaMask' && mmInstalled === false;
+
+            if (notInstalled && installUrl) {
+              return (
+                <a
+                  key={connector.uid}
+                  href={installUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl border border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60 hover:bg-orange-500/10 transition-all group"
+                >
+                  <span className="text-2xl">{meta.icon}</span>
+                  <div className="text-left flex-1">
+                    <p className="font-semibold text-sm">{connector.name}</p>
+                    <p className="text-xs text-orange-400">Not installed — click to install</p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 ml-auto text-orange-400 group-hover:text-orange-300 transition-colors" />
+                </a>
+              );
+            }
+
             return (
               <button
                 key={connector.uid}
                 onClick={() => handleConnect(connector)}
-                disabled={isPending}
+                disabled={isPending || mmInstalled === null}
                 className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <span className="text-2xl">{meta.icon}</span>
@@ -167,13 +207,6 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
             );
           })}
         </div>
-
-        {error && (
-          <div className="mt-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-2xl px-4 py-3">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <p className="text-xs text-red-300">{error.message}</p>
-          </div>
-        )}
 
         <p className="text-xs text-center text-gray-500 mt-4">
           By connecting, you agree to Base Wave&apos;s Terms of Use
