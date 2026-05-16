@@ -48,7 +48,7 @@ export function useTokenBalances(address?: `0x${string}`): TokenBalance[] {
       abi: erc20Abi,
       functionName: 'balanceOf' as const,
       args: [address ?? '0x0000000000000000000000000000000000000000'],
-      chainId: 8453,
+      chainId: 8453 as const,
     })),
     query: { enabled: !!address, staleTime: 30000 },
   });

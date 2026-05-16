@@ -89,8 +89,18 @@ function WalletDropdown({ address, onDisconnect }: { address: string; onDisconne
   );
 }
 
+const ALLOWED_WALLETS = ['MetaMask', 'Coinbase Wallet'];
+
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const { connect, connectors, isPending, error } = useConnect();
+
+  const seen = new Set<string>();
+  const filteredConnectors = connectors.filter((c) => {
+    if (!ALLOWED_WALLETS.includes(c.name)) return false;
+    if (seen.has(c.name)) return false;
+    seen.add(c.name);
+    return true;
+  });
 
   const handleConnect = (connector: (typeof connectors)[0]) => {
     connect(
@@ -135,7 +145,7 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-3">
-          {connectors.map((connector) => {
+          {filteredConnectors.map((connector) => {
             const meta = CONNECTOR_META[connector.name] ?? { icon: '👛', description: connector.name };
             return (
               <button
@@ -175,7 +185,8 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
 
 function WrongChainBanner() {
   const { isConnected } = useAccount();
-  const chainId = useChainId();
+  const rawChainId = useChainId();
+  const chainId = rawChainId as number;
   const { switchChain, isPending } = useSwitchChain();
 
   if (!isConnected || chainId === base.id) return null;

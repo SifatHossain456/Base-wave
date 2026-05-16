@@ -1,92 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Image, ExternalLink, Search } from 'lucide-react';
 
 type NFTCollection = {
   name: string;
-  emoji: string;
   color: string;
   description: string;
   url: string;
   tag: string;
+  image: string | null;
+  floorPrice: number | null;
+  floorPriceUSD: number | null;
 };
-
-const NFT_COLLECTIONS: NFTCollection[] = [
-  {
-    name: 'Onchain Gaias',
-    emoji: '🌌',
-    color: '#0052FF',
-    description: 'The first fully on-chain generative art collection on Base. Supported by Jesse Pollak.',
-    url: 'https://opensea.io/collection/onchain-gaias',
-    tag: 'Art',
-  },
-  {
-    name: 'Based Punks',
-    emoji: '😤',
-    color: '#7C3AED',
-    description: 'The original punk collection on Base. A tribute to the OG CryptoPunks, now on Base mainnet.',
-    url: 'https://opensea.io/collection/based-punks',
-    tag: 'PFP',
-  },
-  {
-    name: 'Based Fellas',
-    emoji: '😎',
-    color: '#10B981',
-    description: 'Unique hand-drawn characters celebrating the Base culture and community.',
-    url: 'https://opensea.io/collection/based-fellas',
-    tag: 'PFP',
-  },
-  {
-    name: 'Tiny Based Frogs',
-    emoji: '🐸',
-    color: '#22C55E',
-    description: 'Tiny frogs living on Base. Jesse Pollak himself holds one. Community-first collection.',
-    url: 'https://opensea.io/collection/tinybasedfrog',
-    tag: 'Community',
-  },
-  {
-    name: 'Base Gods',
-    emoji: '⚡',
-    color: '#F59E0B',
-    description: 'Mythological deities reborn on Base mainnet. Holders gain access to exclusive DAO governance.',
-    url: 'https://opensea.io/collection/base-gods',
-    tag: 'Utility',
-  },
-  {
-    name: 'Mochimons',
-    emoji: '🌸',
-    color: '#EC4899',
-    description: 'Cute and collectible Mochi-style characters native to the Base ecosystem.',
-    url: 'https://opensea.io/collection/mochimons',
-    tag: 'Art',
-  },
-  {
-    name: 'NFToshis',
-    emoji: '₿',
-    color: '#F7931A',
-    description: 'Bitcoin-themed NFT collection bridging BTC culture to the Base L2 ecosystem.',
-    url: 'https://opensea.io/collection/nftoshis',
-    tag: 'Themed',
-  },
-  {
-    name: 'Primitives',
-    emoji: '🔷',
-    color: '#00D4FF',
-    description: 'Geometric on-chain primitives — simple shapes with deep mathematical beauty, fully on-chain.',
-    url: 'https://opensea.io/collection/primitives-base',
-    tag: 'On-Chain',
-  },
-];
 
 const TAGS = ['All', 'Art', 'PFP', 'On-Chain', 'Community', 'Utility', 'Themed'];
 
 export default function NFTsPage() {
+  const [collections, setCollections] = useState<NFTCollection[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tag, setTag] = useState('All');
+  const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
 
-  const filtered = NFT_COLLECTIONS.filter((c) => {
+  useEffect(() => {
+    fetch('/api/nft-collections')
+      .then((r) => r.json())
+      .then((data) => setCollections(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = collections.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchTag = tag === 'All' || c.tag === tag;
     return matchSearch && matchTag;
@@ -158,65 +104,117 @@ export default function NFTsPage() {
           ))}
         </motion.div>
 
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="card rounded-3xl p-5 animate-pulse">
+                <div className="w-full aspect-square rounded-2xl bg-white/5 mb-4" />
+                <div className="h-4 bg-white/5 rounded mb-2 w-3/4" />
+                <div className="h-3 bg-white/5 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* NFT Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.map((col, i) => (
-            <motion.a
-              key={col.name}
-              href={col.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              whileHover={{ y: -4 }}
-              className="wave-card glass-hover rounded-3xl p-5 group block"
-            >
-              {/* NFT image placeholder */}
-              <div
-                className="w-full aspect-square rounded-2xl mb-4 flex items-center justify-center text-6xl relative overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${col.color}20, ${col.color}08)` }}
-              >
-                <span>{col.emoji}</span>
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: `radial-gradient(circle at center, ${col.color}20, transparent 70%)` }}
-                />
-              </div>
-
-              {/* Name + tag */}
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-bold">{col.name}</p>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={{ background: `${col.color}20`, color: col.color }}
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filtered.map((col, i) => {
+              const showImg = col.image && !imgErrors.has(col.name);
+              return (
+                <motion.a
+                  key={col.name}
+                  href={col.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  whileHover={{ y: -4 }}
+                  className="card card-hover rounded-3xl p-5 group block"
+                >
+                  {/* Image area */}
+                  <div
+                    className="w-full aspect-square rounded-2xl mb-4 overflow-hidden relative"
+                    style={!showImg ? { background: `linear-gradient(135deg, ${col.color}25, ${col.color}08)` } : {}}
                   >
-                    {col.tag}
-                  </span>
-                </div>
-                <div className="p-1.5 rounded-xl hover:bg-white/5 text-gray-500 group-hover:text-white transition-colors opacity-0 group-hover:opacity-100">
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </div>
-              </div>
+                    {showImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={col.image!}
+                        alt={col.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={() =>
+                          setImgErrors((prev) => {
+                            const next = new Set(prev);
+                            next.add(col.name);
+                            return next;
+                          })
+                        }
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div
+                          className="w-16 h-16 rounded-2xl"
+                          style={{ background: `${col.color}30`, border: `1px solid ${col.color}40` }}
+                        />
+                      </div>
+                    )}
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                      style={{ background: `radial-gradient(circle at center, ${col.color}15, transparent 70%)` }}
+                    />
+                  </div>
 
-              <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-2">
-                {col.description}
-              </p>
+                  {/* Name + tag */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-bold text-sm">{col.name}</p>
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={{ background: `${col.color}20`, color: col.color }}
+                      >
+                        {col.tag}
+                      </span>
+                    </div>
+                    <div className="p-1.5 rounded-xl text-gray-500 group-hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
 
-              <div
-                className="w-full text-center text-xs font-semibold py-2 rounded-xl transition-colors"
-                style={{ background: `${col.color}15`, color: col.color }}
-              >
-                View on OpenSea →
-              </div>
-            </motion.a>
-          ))}
-        </div>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-4 line-clamp-2">
+                    {col.description}
+                  </p>
 
-        {filtered.length === 0 && (
+                  {/* Floor price + CTA */}
+                  <div className="flex items-center justify-between">
+                    {col.floorPrice !== null ? (
+                      <div>
+                        <p className="text-xs text-gray-500">Floor</p>
+                        <p className="text-sm font-bold" style={{ color: col.color }}>
+                          {col.floorPrice.toFixed(4)} ETH
+                        </p>
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+                    <div
+                      className="text-xs font-semibold px-3 py-1.5 rounded-xl"
+                      style={{ background: `${col.color}15`, color: col.color }}
+                    >
+                      View →
+                    </div>
+                  </div>
+                </motion.a>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-4xl mb-3">🌊</p>
+            <div className="text-4xl mb-3">🌊</div>
             <p className="text-gray-400">No collections match your search.</p>
           </div>
         )}
