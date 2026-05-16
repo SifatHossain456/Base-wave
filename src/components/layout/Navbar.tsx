@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount, useConnect, useDisconnect, useBalance, useChainId, useSwitchChain } from 'wagmi';
 import { base } from 'wagmi/chains';
-import { Menu, X, Waves, BarChart3, User, Layers, ChevronDown, Wallet, LogOut, Copy, ExternalLink, AlertCircle, Image, TriangleAlert } from 'lucide-react';
+import { Menu, X, Waves, BarChart3, User, Layers, ChevronDown, Wallet, LogOut, Copy, ExternalLink, Image, TriangleAlert } from 'lucide-react';
 import { cn, shortenAddress } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -89,31 +89,13 @@ function WalletDropdown({ address, onDisconnect }: { address: string; onDisconne
   );
 }
 
-const ALLOWED_WALLETS = ['MetaMask', 'Coinbase Wallet'];
-
-const INSTALL_LINKS: Record<string, string> = {
-  'MetaMask': 'https://metamask.io/download',
-};
-
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const { connect, connectors, isPending } = useConnect();
-  const [mmInstalled, setMmInstalled] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    // Detect MetaMask after mount (window is available)
-    const isInstalled =
-      typeof window !== 'undefined' &&
-      !!(window as { ethereum?: { isMetaMask?: boolean } }).ethereum?.isMetaMask;
-    setMmInstalled(isInstalled);
-  }, []);
-
-  const seen = new Set<string>();
-  const filteredConnectors = connectors.filter((c) => {
-    if (!ALLOWED_WALLETS.includes(c.name)) return false;
-    if (seen.has(c.name)) return false;
-    seen.add(c.name);
-    return true;
-  });
+  // EIP-6963 auto-detects MetaMask only if it's actually installed.
+  // Coinbase Wallet comes from our configured connector (works without extension).
+  const metaMaskConnector = connectors.find((c) => c.name === 'MetaMask');
+  const coinbaseConnector = connectors.find((c) => c.name === 'Coinbase Wallet');
 
   const handleConnect = (connector: (typeof connectors)[0]) => {
     connect(
@@ -121,21 +103,33 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
       {
         onSuccess: () => { toast.success('Wallet connected!'); onClose(); },
         onError: (err) => {
-          if (
-            err.message?.includes('not installed') ||
-            err.message?.includes('not found') ||
-            err.message?.includes('Provider not found')
-          ) {
-            toast.error(`${connector.name} is not installed`);
-          } else if (err.message?.includes('rejected') || err.message?.includes('denied') || err.message?.includes('cancel')) {
+          if (err.message?.includes('rejected') || err.message?.includes('denied') || err.message?.includes('cancel')) {
             toast.error('Connection rejected');
           } else {
-            toast.error('Connection failed');
+            toast.error('Connection failed. Try again.');
           }
         },
       }
     );
   };
+
+  const WalletRow = ({ connector, meta }: { connector: (typeof connectors)[0]; meta: { icon: string; description: string } }) => (
+    <button
+      onClick={() => handleConnect(connector)}
+      disabled={isPending}
+      className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      <span className="text-2xl">{meta.icon}</span>
+      <div className="text-left flex-1">
+        <p className="font-semibold text-sm">{connector.name}</p>
+        <p className="text-xs text-gray-400">{meta.description}</p>
+      </div>
+      {isPending
+        ? <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin ml-auto" />
+        : <ChevronDown className="w-4 h-4 ml-auto -rotate-90 text-gray-500 group-hover:text-blue-400 transition-colors" />
+      }
+    </button>
+  );
 
   return (
     <motion.div
@@ -162,50 +156,35 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-3">
-          {filteredConnectors.map((connector) => {
-            const meta = CONNECTOR_META[connector.name] ?? { icon: '👛', description: connector.name };
-            const installUrl = INSTALL_LINKS[connector.name];
-            // MetaMask: show install link until we know it's installed
-            const notInstalled = connector.name === 'MetaMask' && mmInstalled === false;
+          {/* MetaMask — shown via EIP-6963 if installed, else install link */}
+          {metaMaskConnector ? (
+            <WalletRow
+              connector={metaMaskConnector}
+              meta={CONNECTOR_META['MetaMask']}
+            />
+          ) : (
+            <a
+              href="https://metamask.io/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60 hover:bg-orange-500/10 transition-all group"
+            >
+              <span className="text-2xl">🦊</span>
+              <div className="text-left flex-1">
+                <p className="font-semibold text-sm">MetaMask</p>
+                <p className="text-xs text-orange-400">Not installed — click to install</p>
+              </div>
+              <ExternalLink className="w-4 h-4 ml-auto text-orange-400 group-hover:text-orange-300 transition-colors" />
+            </a>
+          )}
 
-            if (notInstalled && installUrl) {
-              return (
-                <a
-                  key={connector.uid}
-                  href={installUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl border border-orange-500/30 bg-orange-500/5 hover:border-orange-500/60 hover:bg-orange-500/10 transition-all group"
-                >
-                  <span className="text-2xl">{meta.icon}</span>
-                  <div className="text-left flex-1">
-                    <p className="font-semibold text-sm">{connector.name}</p>
-                    <p className="text-xs text-orange-400">Not installed — click to install</p>
-                  </div>
-                  <ExternalLink className="w-4 h-4 ml-auto text-orange-400 group-hover:text-orange-300 transition-colors" />
-                </a>
-              );
-            }
-
-            return (
-              <button
-                key={connector.uid}
-                onClick={() => handleConnect(connector)}
-                disabled={isPending || mmInstalled === null}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <span className="text-2xl">{meta.icon}</span>
-                <div className="text-left flex-1">
-                  <p className="font-semibold text-sm">{connector.name}</p>
-                  <p className="text-xs text-gray-400">{meta.description}</p>
-                </div>
-                {isPending
-                  ? <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin ml-auto" />
-                  : <ChevronDown className="w-4 h-4 ml-auto -rotate-90 text-gray-500 group-hover:text-blue-400 transition-colors" />
-                }
-              </button>
-            );
-          })}
+          {/* Coinbase Wallet — configured connector, works without extension */}
+          {coinbaseConnector && (
+            <WalletRow
+              connector={coinbaseConnector}
+              meta={CONNECTOR_META['Coinbase Wallet']}
+            />
+          )}
         </div>
 
         <p className="text-xs text-center text-gray-500 mt-4">

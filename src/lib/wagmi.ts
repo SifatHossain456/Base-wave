@@ -1,13 +1,13 @@
 import { http, createConfig } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { coinbaseWallet, injected, walletConnect } from 'wagmi/connectors';
+import { coinbaseWallet, walletConnect } from 'wagmi/connectors';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '';
 
 export const config = createConfig({
   chains: [base, baseSepolia],
+  multiInjectedProviderDiscovery: true, // EIP-6963: auto-detects MetaMask, Rabby, etc.
   connectors: [
-    injected({ target: 'metaMask' }),
     coinbaseWallet({
       appName: 'Base Wave',
       preference: 'all',
