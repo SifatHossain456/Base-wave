@@ -144,6 +144,8 @@ export default function NFTsPage() {
                       <img
                         src={col.image!}
                         alt={col.name}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={() =>
                           setImgErrors((prev) => {
